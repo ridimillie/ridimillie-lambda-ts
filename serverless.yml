@@ -1,0 +1,20 @@
+service: ridimille-lambda-ts
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: dev
+  region: ap-northeast-2
+
+functions:
+  crawling:
+    handler: src/handler.crawling
+
+    events: 
+      - http:
+          path: crawling
+          method: get
