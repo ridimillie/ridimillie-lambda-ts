@@ -40,17 +40,16 @@ exports.crawling = void 0;
 var Crawler_1 = require("./class/Crawler");
 var scrapper_1 = require("./modules/scrapper");
 var crawling = function (event, context) { return __awaiter(void 0, void 0, void 0, function () {
-    var title, bid, response, purchaseBooks, dto, subscribedBooks, response, err_1, response;
+    var title, bid, response, purchaseBooks, subscribedBooks, response, err_1, response;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                title = '타겟티드';
-                bid = '16298643';
-                if (title == 'undefined' || !bid || !title) {
+                title = event.title, bid = event.bid;
+                if (title == "undefined" || !bid || !title) {
                     response = {
                         statusCode: 400,
                         body: JSON.stringify({
-                            message: 'Null Value',
+                            message: "Null Value",
                         }),
                     };
                     return [2 /*return*/, response];
@@ -63,8 +62,7 @@ var crawling = function (event, context) { return __awaiter(void 0, void 0, void
                 purchaseBooks = _a.sent();
                 return [4 /*yield*/, Crawler_1.default.crawling(title)];
             case 3:
-                dto = _a.sent();
-                subscribedBooks = dto
+                subscribedBooks = (_a.sent())
                     .filter(function (item) { return item !== undefined; })
                     .filter(function (item) { return item !== null; });
                 response = {
@@ -80,7 +78,7 @@ var crawling = function (event, context) { return __awaiter(void 0, void 0, void
                 response = {
                     statusCode: 400,
                     body: JSON.stringify({
-                        message: 'Null Value',
+                        message: "Server error",
                     }),
                 };
                 return [2 /*return*/, response];

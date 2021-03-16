@@ -58,7 +58,7 @@ var pupRequest = function (url, selector, childSelectorArr, platform, title, sub
             case 1: return [4 /*yield*/, _c.apply(_b, [(_d.executablePath = _e.sent(),
                         _d.args = chromium.args,
                         _d.defaultViewport = chromium.defaultViewport,
-                        _d.headless = false,
+                        _d.headless = chromium.headless,
                         _d)])];
             case 2:
                 browse = _e.sent();
@@ -109,7 +109,7 @@ var kyoboPupRequest = function (url, selector, childSelectorArr, platform, title
             case 1: return [4 /*yield*/, _c.apply(_b, [(_d.executablePath = _e.sent(),
                         _d.args = chromium.args,
                         _d.defaultViewport = chromium.defaultViewport,
-                        _d.headless = false,
+                        _d.headless = chromium.headless,
                         _d)])];
             case 2:
                 browse = _e.sent();

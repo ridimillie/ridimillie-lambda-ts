@@ -1,4 +1,5 @@
 service: ridimille-lambda-ts
+useDotenv: true
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
@@ -7,14 +8,16 @@ plugins:
 provider:
   name: aws
   runtime: nodejs10.x
-  stage: dev
   region: ap-northeast-2
+  lambdaHashingVersion: 20201221
+  apiGateway: { shouldStartNameWithService: true }
+  stage: dev
 
 functions:
   crawling:
     handler: src/handler.crawling
 
-    events: 
+    events:
       - http:
           path: crawling
           method: get
