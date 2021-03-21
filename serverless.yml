@@ -7,7 +7,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs12.x
   region: ap-northeast-2
   lambdaHashingVersion: 20201221
   apiGateway: { shouldStartNameWithService: true }
@@ -16,7 +16,6 @@ provider:
 functions:
   crawling:
     handler: src/handler.crawling
-
     events:
       - http:
           path: crawling
