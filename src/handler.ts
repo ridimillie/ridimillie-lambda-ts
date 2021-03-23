@@ -4,7 +4,10 @@ import scrapper from "./modules/scrapper";
 import { CrawlerResponse } from "./types/index";
 
 const crawling: Handler = async (event: any, context: Context) => {
-  const { title, bid }: { title?: string; bid?: string } = event;
+  const {
+    title,
+    bid,
+  }: { title?: string; bid?: string } = event.queryStringParameters;
 
   if (title == "undefined" || !bid || !title) {
     const response: CrawlerResponse = {

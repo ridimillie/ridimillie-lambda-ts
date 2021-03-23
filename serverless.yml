@@ -20,3 +20,4 @@ functions:
       - http:
           path: crawling
           method: get
+          cors: true
