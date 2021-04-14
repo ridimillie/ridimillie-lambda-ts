@@ -47,7 +47,6 @@ type NaverBook_T = {
     pubdate: Date;
 };
 
-
 interface CrawlerResponse {
     statusCode: number;
     body: string;
@@ -67,4 +66,4 @@ export { Platforms, ServiceType, SubscribePrice };
  *  export interface
  */
 
-export { CrawlerResponse }
+export { CrawlerResponse };
