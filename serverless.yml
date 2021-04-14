@@ -21,3 +21,31 @@ functions:
           path: crawling
           method: get
           cors: true
+  ridiBooks:
+    handler: src/handler.ridiBooks
+    events:
+      - http:
+          path: ridibooks
+          method: get
+          cors: true
+  yes24:
+    handler: src/handler.yes24
+    events:
+      - http:
+          path: yes24
+          method: get
+          cors: true
+  naver:
+    handler: src/handler.naver
+    events:
+      - http:
+          path: naver
+          method: get
+          cors: true
+  kyobo:
+    handler: src/handler.kyobo
+    events:
+      - http:
+          path: kyobo
+          method: get
+          cors: true
