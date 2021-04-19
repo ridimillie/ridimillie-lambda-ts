@@ -24,8 +24,9 @@ const crawling: Handler = async (event: any, context: Context) => {
     }
 
     try {
-        const purchaseBooks = await scrapper.searchNaverBook(bid);
-        const subscribedBooks = (await crawler.crawling(title))
+        const [subscribedBooks, purchaseBooks] = (
+            await crawler.crawling(title, bid)
+        )
             .filter((item) => item !== undefined)
             .filter((item) => item !== null);
 

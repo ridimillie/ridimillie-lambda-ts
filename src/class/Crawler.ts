@@ -1,6 +1,14 @@
 import * as _ from 'lodash';
-import { ridiSelect, millie, yes24, kyoboBook } from '../modules/scrapper';
+import {
+    ridiSelect,
+    millie,
+    yes24,
+    kyoboBook,
+    searchNaverBook,
+} from '../modules/scrapper';
 import BookPrice from './BookPrice';
+import NaverBook from './NaverBook';
+import NaverBookInformation from './NaverBook';
 /**
  * Singleton Class
  */
@@ -14,23 +22,33 @@ class Crawler {
         return this.instance;
     }
 
-    public async crawling(title: string) {
-        const lists = [];
-        const scrappers = [ridiSelect(title), yes24(title), kyoboBook(title)];
+    public async crawling(title: string, bid: string) {
+        const subscribedBooks = [];
+        const purchaseBooks = [];
+        const scrappers = [
+            ridiSelect(title),
+            yes24(title),
+            kyoboBook(title),
+            searchNaverBook(bid),
+        ];
         await Promise.allSettled(scrappers).then((results) => {
             results.forEach((result) => {
                 if (result.status == 'fulfilled') {
                     if (result.value instanceof BookPrice) {
-                        lists.push(result.value);
-                    }
-
-                    if (result.value instanceof Array) {
-                        lists.push(...result.value);
+                        console.log('BookPrice');
+                        console.log(result.value);
+                        subscribedBooks.push(result.value);
+                    } else if (result.value instanceof Array) {
+                        if (result.value[0] instanceof NaverBook) {
+                            purchaseBooks.push(...result.value);
+                        } else {
+                            subscribedBooks.push(...result.value);
+                        }
                     }
                 }
             });
         });
-        return lists;
+        return [subscribedBooks, purchaseBooks];
     }
 }
 
