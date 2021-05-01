@@ -1,13 +1,16 @@
 import { Handler, Context } from 'aws-lambda';
-import crawler from './class/Crawler';
-import ridiCrawler from './class/CrawlerRidibooks';
-import kyoboCrawler from './class/CrawlerKyobo';
-import yes24Crawler from './class/CrawlerYes24';
-import naverCrawler from './class/CrawlerNaver';
-import scrapper from './modules/scrapper';
-import { CrawlerResponse } from './types/index';
+import * as _ from 'lodash';
+import { DynamoDB } from 'aws-sdk';
 
-const crawling: Handler = async (event: any, context: Context) => {
+import crawler from './class/Crawler';
+import naverCrawler from './class/CrawlerNaver';
+import naverBookAPI from './modules/naverBookApi';
+import { CrawlerResponse, NaverBook_T } from './types/index';
+
+const crawling: Handler = async (
+    event: any,
+    context: Context
+): Promise<CrawlerResponse> => {
     const {
         title,
         bid,
@@ -23,120 +26,47 @@ const crawling: Handler = async (event: any, context: Context) => {
         return response;
     }
 
-    try {
-        const [subscribedBooks, purchaseBooks] = (
-            await crawler.crawling(title, bid)
-        )
-            .filter((item) => item !== undefined)
-            .filter((item) => item !== null);
+    const documentClient = new DynamoDB.DocumentClient({});
+    const params = {
+        TableName: process.env.TABLE_NAME,
+        Key: {
+            bid: bid,
+            bookName: title,
+        },
+    };
 
+    try {
+        const book = (await documentClient.get(params).promise()).Item;
+        if (book) {
+            console.log(book);
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    book,
+                }),
+            };
+        }
+    } catch (error) {
+        const response: CrawlerResponse = {
+            statusCode: 500,
+            body: JSON.stringify({
+                message: 'Server error',
+            }),
+        };
+        return response;
+    }
+
+    try {
+        const books = (await crawler.crawling(title, bid)).filter(
+            (item) => !_.isNil(item)
+        );
+        console.log(books);
+        const [subscribedBooks, purchaseBooks] = books;
         const response: CrawlerResponse = {
             statusCode: 200,
             body: JSON.stringify({
                 subscribedBooks,
                 purchaseBooks,
-            }),
-        };
-        return response;
-    } catch (err) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Server error',
-            }),
-        };
-        return response;
-    }
-};
-
-const ridiBooks: Handler = async (event: any, context: Context) => {
-    const { title }: { title?: string } = event.queryStringParameters;
-
-    if (title == 'undefined' || !title) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Null Value',
-            }),
-        };
-        return response;
-    }
-
-    try {
-        const subscribedBooks = await ridiCrawler.crawling(title);
-
-        const response: CrawlerResponse = {
-            statusCode: 200,
-            body: JSON.stringify({
-                subscribedBooks,
-            }),
-        };
-        return response;
-    } catch (err) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Server error',
-            }),
-        };
-        return response;
-    }
-};
-
-const kyobo: Handler = async (event: any, context: Context) => {
-    const { title }: { title?: string } = event.queryStringParameters;
-
-    if (title == 'undefined' || !title) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Null Value',
-            }),
-        };
-        return response;
-    }
-
-    try {
-        const subscribedBooks = await kyoboCrawler.crawling(title);
-
-        const response: CrawlerResponse = {
-            statusCode: 200,
-            body: JSON.stringify({
-                subscribedBooks,
-            }),
-        };
-        return response;
-    } catch (err) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Server error',
-            }),
-        };
-        return response;
-    }
-};
-
-const yes24: Handler = async (event: any, context: Context) => {
-    const { title }: { title?: string } = event.queryStringParameters;
-
-    if (title == 'undefined' || !title) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Null Value',
-            }),
-        };
-        return response;
-    }
-
-    try {
-        const subscribedBooks = await yes24Crawler.crawling(title);
-
-        const response: CrawlerResponse = {
-            statusCode: 200,
-            body: JSON.stringify({
-                subscribedBooks,
             }),
         };
         return response;
@@ -185,4 +115,61 @@ const naver: Handler = async (event: any, context: Context) => {
     }
 };
 
-export { crawling, ridiBooks, kyobo, naver, yes24 };
+const naverAPI = async (event: any, context: Context): Promise<any> => {
+    const {
+        start,
+        query,
+    }: { start?: number; query?: string } = event.queryStringParameters;
+
+    try {
+        if (!query || query === 'undefined') {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({
+                    message: 'Server error',
+                }),
+            };
+        }
+        const apiBooks = await naverBookAPI.callBookApi(
+            query,
+            start ? start : 1
+        );
+        const books = apiBooks.map((book) => {
+            const bookTitle = JSON.stringify(book.title)
+                .replace(/(<b>)|(<\/b>)/gi, '')
+                .replace(/ *\([^)]*\) */g, '');
+            const bookDescription = JSON.stringify(book.description).replace(
+                /(<b>)|(<\/b>)/gi,
+                ''
+            );
+            return {
+                title: JSON.parse(bookTitle),
+                bid: book.link.split('bid=')[1],
+                image: book.image,
+                author: book.author,
+                isbn: book.isbn,
+                description: JSON.parse(bookDescription),
+                publisher: book.publisher,
+                pubdate: book.pubdate,
+            };
+        });
+        const response: CrawlerResponse = {
+            statusCode: 200,
+            body: JSON.stringify({
+                books,
+            }),
+        };
+        return response;
+    } catch (err) {
+        console.log(err);
+        const response: CrawlerResponse = {
+            statusCode: 400,
+            body: JSON.stringify({
+                message: 'Server error',
+            }),
+        };
+        return response;
+    }
+};
+
+export { crawling, naver, naverAPI };

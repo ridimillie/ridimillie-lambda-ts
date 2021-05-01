@@ -8,7 +8,6 @@ import {
 } from '../modules/scrapper';
 import BookPrice from './BookPrice';
 import NaverBook from './NaverBook';
-import NaverBookInformation from './NaverBook';
 /**
  * Singleton Class
  */
@@ -35,8 +34,6 @@ class Crawler {
             results.forEach((result) => {
                 if (result.status == 'fulfilled') {
                     if (result.value instanceof BookPrice) {
-                        console.log('BookPrice');
-                        console.log(result.value);
                         subscribedBooks.push(result.value);
                     } else if (result.value instanceof Array) {
                         if (result.value[0] instanceof NaverBook) {
