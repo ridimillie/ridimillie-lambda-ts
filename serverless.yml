@@ -1,23 +1,43 @@
 service: ridimille-lambda-ts
 useDotenv: true
 plugins:
-  - serverless-plugin-typescript
-  - serverless-offline
-  - serverless-dotenv-plugin
+    - serverless-plugin-typescript
+    - serverless-offline
+    - serverless-dotenv-plugin
 
 provider:
-  name: aws
-  runtime: nodejs12.x
-  region: ap-northeast-2
-  lambdaHashingVersion: 20201221
-  apiGateway: { shouldStartNameWithService: true }
-  stage: dev
+    name: aws
+    runtime: nodejs12.x
+    region: ap-northeast-2
+    lambdaHashingVersion: 20201221
+    apiGateway: { shouldStartNameWithService: true }
+    stage: dev
+    iam:
+        role:
+            statements:
+                - Effect: Allow
+                  Action:
+                      - dynamodb:Scan
+                      - dynamodb:Query
+                      - dynamodb:GetItem
+                      - dynamodb:PutItem
+                      - dynamodb:UpdateItem
+                      - dynamodb:DeleteItem
+                      - dynamodb:DescribeTable
+                  Resource: 'arn:aws:dynamodb:ap-northeast-2:*:*'
 
 functions:
-  crawling:
-    handler: src/handler.crawling
-    events:
-      - http:
-          path: crawling
-          method: get
-          cors: true
+    crawling:
+        handler: src/handler.crawling
+        events:
+            - http:
+                  path: crawling
+                  method: get
+                  cors: true
+    naverAPI:
+        handler: src/handler.naverAPI
+        events:
+            - http:
+                  path: naver-api
+                  method: get
+                  cors: true

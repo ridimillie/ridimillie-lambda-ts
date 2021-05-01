@@ -3,7 +3,12 @@ import * as cheerio from 'cheerio';
 
 import { Platforms, ServiceType, SubscribePrice, Platform_T } from '../types';
 import BookPrice from '../class/BookPrice';
-import { pupRequest, kyoboPupRequest } from './puppeteerRequest';
+import NaverBook from '../class/NaverBook';
+import {
+    pupRequest,
+    kyoboPupRequest,
+    naverPupRequest,
+} from './puppeteerRequest';
 
 const ridiSelect = async (title: string): Promise<BookPrice> => {
     const platform = 'RIDI';
@@ -118,73 +123,13 @@ const kyoboBook = async (title: string): Promise<Array<BookPrice>> => {
     return book;
 };
 
-const searchNaverBook = (
-    bid: string
-): Promise<
-    Array<{
-        platform: string;
-        price: number;
-        redirectURL: string;
-    }>
-> =>
-    new Promise((resolved, rejected) => {
-        const platformIdMap: Map<Platform_T, string> = new Map([
-            [Platforms.RIDI, 'RIDI'],
-            [Platforms.MILLIE, 'MILLIE'],
-            [Platforms.YES24, 'YES24'],
-            [Platforms.KYOBO, 'KYOBO'],
-            [Platforms.ALADIN, 'ALADIN'],
-            [Platforms.INTERPARK, 'INTERPARK'],
-            [Platforms.NAVER, 'NAVER'],
-        ]);
-
-        const reversedPlatformIdMap: Map<string, Platform_T> = new Map([
-            ['RIDI', Platforms.RIDI],
-            ['MILLIE', Platforms.MILLIE],
-            ['YES24', Platforms.YES24],
-            ['KYOBO', Platforms.KYOBO],
-            ['ALADIN', Platforms.ALADIN],
-            ['INTERPARK', Platforms.INTERPARK],
-            ['NAVER', Platforms.NAVER],
-        ]);
-
-        const url = 'https://book.naver.com/bookdb/book_detail.nhn?bid=' + bid;
-        const options = {
-            url,
-            headers: { 'User-Agent': 'Mozilla/5.0' },
-            encoding: null,
-        };
-
-        request.get(options, function (error, response, body) {
-            if (error) {
-                rejected(response.statusCode);
-            }
-
-            const $ = cheerio.load(body);
-            const selector = '#productListLayer > ul > li';
-            const books = [];
-
-            $(selector).each((_, book) => {
-                const isEbook = $(book).find('strong').text();
-                const platform = $(book).find('div > a').text();
-                const price = $(book).find('span > em').text();
-                const redirectURL = $(book).find('div > a').attr('href');
-                if (isEbook.match('ebook')) {
-                    const platformName = platform.split(
-                        'Naver'
-                    )[0] as Platform_T;
-                    books.push({
-                        platform: reversedPlatformIdMap.get(
-                            platformIdMap.get(platformName)
-                        ),
-                        price: Number(price.split('원')[0]),
-                        redirectURL,
-                    });
-                }
-            });
-            resolved(books);
-        });
-    });
+const searchNaverBook = async (bid: string): Promise<Array<NaverBook>> => {
+    const url = 'https://book.naver.com/bookdb/book_detail.nhn?bid=' + bid;
+    const selector = '#productListLayer > ul > li';
+    const childSelectorArr = ['strong', 'div > a', 'span > em', 'div > a'];
+    const books = await naverPupRequest(url, selector, childSelectorArr, bid);
+    return books;
+};
 
 export default { ridiSelect, millie, yes24, kyoboBook, searchNaverBook };
 export { ridiSelect, millie, yes24, kyoboBook, searchNaverBook };
