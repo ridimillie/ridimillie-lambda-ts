@@ -23,10 +23,11 @@ const pupRequest = async (
             executablePath: await chromium.executablePath,
             args: chromium.args,
             defaultViewport: chromium.defaultViewport,
-            headless: chromium.headless,
+            headless: true,
         });
         const page = await browse.newPage();
         await page.goto(url, { waitUntil: 'networkidle0' });
+        await page.waitForSelector(selector.concat(' > ', childSelectorArr[0]));
         const content = await page.content();
         const $ = cheerio.load(content);
         const lists = [];
@@ -71,10 +72,11 @@ const kyoboPupRequest = async (
         executablePath: await chromium.executablePath,
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        headless: chromium.headless,
+        headless: true,
     });
     const page = await browse.newPage();
     await page.goto(url, { waitUntil: 'networkidle0' });
+    await page.waitForSelector(selector.concat(' > ', childSelectorArr[0]));
     const content = await page.content();
     const $ = cheerio.load(content);
     const lists = [];
@@ -149,10 +151,11 @@ const naverPupRequest = async (
             executablePath: await chromium.executablePath,
             args: chromium.args,
             defaultViewport: chromium.defaultViewport,
-            headless: chromium.headless,
+            headless: true,
         });
         const page = await browse.newPage();
         await page.goto(url, { waitUntil: 'networkidle0' });
+        await page.waitForSelector(selector.concat(' > ', childSelectorArr[0]));
         const content = await page.content();
         const $ = cheerio.load(content);
         const books = [];

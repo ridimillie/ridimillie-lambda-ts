@@ -1,12 +1,10 @@
 {
-  "compilerOptions": {
-    "target": "ES5",
-    "module": "CommonJS",
-    "outDir": "./dist",
-    "lib": [
-      "ES2020.Promise",
-    ]
-  },
-  "include": ["src/**/*.ts", "bin/www.ts"],
-  "exclude": ["node_modules"]
+    "compilerOptions": {
+        "target": "ES5",
+        "module": "CommonJS",
+        "outDir": "./dist",
+        "lib": ["ES2020.Promise"]
+    },
+    "include": ["src/**/*.ts", "bin/www.ts"],
+    "exclude": ["node_modules"]
 }
