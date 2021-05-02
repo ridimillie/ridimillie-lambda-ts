@@ -6,6 +6,7 @@ import crawler from './class/Crawler';
 import naverCrawler from './class/CrawlerNaver';
 import naverBookAPI from './modules/naverBookApi';
 import { CrawlerResponse, NaverBook_T } from './types/index';
+import { responseFormat } from './modules/responseFormat';
 
 const crawling: Handler = async (
     event: any,
@@ -17,67 +18,73 @@ const crawling: Handler = async (
     }: { title?: string; bid?: string } = event.queryStringParameters;
 
     if (title == 'undefined' || !bid || !title) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Null Value',
-            }),
-        };
-        return response;
+        return responseFormat(400, { message: 'Null Value' });
     }
 
     const documentClient = new DynamoDB.DocumentClient({});
-    const params = {
-        TableName: process.env.TABLE_NAME,
-        Key: {
-            bid: bid,
-            bookName: title,
+    const TableName = process.env.TABLE_NAME;
+    let params = {
+        TableName,
+        KeyConditionExpression: '#bid = :bid',
+        ExpressionAttributeNames: {
+            '#bid': 'bid',
+        },
+        ExpressionAttributeValues: {
+            ':bid': bid,
         },
     };
 
     try {
-        const book = (await documentClient.get(params).promise()).Item;
-        if (book) {
-            console.log(book);
-            return {
-                statusCode: 200,
-                body: JSON.stringify({
-                    book,
-                }),
-            };
+        const books = (await documentClient.query(params).promise()).Items;
+        if (books.length > 0) {
+            const returnBooks = books.map((result) => {
+                return {
+                    [result.sortKey]: result.booksInfo,
+                };
+            });
+            const [purchase, subscribe] = [...returnBooks];
+            return responseFormat(200, Object.assign(subscribe, purchase));
         }
-    } catch (error) {
-        const response: CrawlerResponse = {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: 'Server error',
-            }),
-        };
-        return response;
+    } catch (err) {
+        console.log('error', err);
+        return responseFormat(500, { message: 'Server error' });
     }
 
     try {
         const books = (await crawler.crawling(title, bid)).filter(
             (item) => !_.isNil(item)
         );
-        console.log(books);
-        const [subscribedBooks, purchaseBooks] = books;
-        const response: CrawlerResponse = {
-            statusCode: 200,
-            body: JSON.stringify({
-                subscribedBooks,
-                purchaseBooks,
-            }),
-        };
-        return response;
+        const [subscribe, purchase] = books;
+
+        await documentClient
+            .put({
+                TableName,
+                Item: {
+                    bid,
+                    sortKey: 'subscribe',
+                    booksInfo: subscribe,
+                },
+            })
+            .promise();
+
+        await documentClient
+            .put({
+                TableName,
+                Item: {
+                    bid,
+                    sortKey: 'purchase',
+                    booksInfo: purchase,
+                },
+            })
+            .promise();
+
+        return responseFormat(200, {
+            subscribe,
+            purchase,
+        });
     } catch (err) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Server error',
-            }),
-        };
-        return response;
+        console.log('error', err);
+        return responseFormat(500, { message: 'Server error' });
     }
 };
 
@@ -85,33 +92,15 @@ const naver: Handler = async (event: any, context: Context) => {
     const { bid }: { bid?: string } = event.queryStringParameters;
 
     if (bid == 'undefined' || !bid) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Null Value',
-            }),
-        };
-        return response;
+        return responseFormat(400, { message: 'Null Value' });
     }
 
     try {
-        const subscribedBooks = await naverCrawler.crawling(bid);
-
-        const response: CrawlerResponse = {
-            statusCode: 200,
-            body: JSON.stringify({
-                subscribedBooks,
-            }),
-        };
-        return response;
+        const subscribe = await naverCrawler.crawling(bid);
+        return responseFormat(200, { subscribe });
     } catch (err) {
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Server error',
-            }),
-        };
-        return response;
+        console.log('error', err);
+        return responseFormat(500, { message: 'Server Error' });
     }
 };
 
@@ -123,12 +112,7 @@ const naverAPI = async (event: any, context: Context): Promise<any> => {
 
     try {
         if (!query || query === 'undefined') {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({
-                    message: 'Server error',
-                }),
-            };
+            return responseFormat(400, { message: 'query 값 이 없음' });
         }
         const apiBooks = await naverBookAPI.callBookApi(
             query,
@@ -153,22 +137,10 @@ const naverAPI = async (event: any, context: Context): Promise<any> => {
                 pubdate: book.pubdate,
             };
         });
-        const response: CrawlerResponse = {
-            statusCode: 200,
-            body: JSON.stringify({
-                books,
-            }),
-        };
-        return response;
+        return responseFormat(200, books);
     } catch (err) {
         console.log(err);
-        const response: CrawlerResponse = {
-            statusCode: 400,
-            body: JSON.stringify({
-                message: 'Server error',
-            }),
-        };
-        return response;
+        return responseFormat(500, { message: 'Server Error' });
     }
 };
 

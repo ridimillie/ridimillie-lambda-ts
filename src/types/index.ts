@@ -48,6 +48,7 @@ type NaverBook_T = {
 };
 
 interface CrawlerResponse {
+    headers: any;
     statusCode: number;
     body: string;
 }
