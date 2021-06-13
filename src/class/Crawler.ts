@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 import {
     ridiSelect,
-    millie,
     yes24,
     kyoboBook,
     searchNaverBook,
@@ -45,6 +44,7 @@ class Crawler {
                 }
             });
         });
+
         return [subscribedBooks, purchaseBooks];
     }
 }

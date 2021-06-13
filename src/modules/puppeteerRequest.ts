@@ -23,7 +23,7 @@ const pupRequest = async (
             executablePath: await chromium.executablePath,
             args: chromium.args,
             defaultViewport: chromium.defaultViewport,
-            headless: true,
+            headless: false,
         });
         const page = await browse.newPage();
         await page.goto(url, { waitUntil: 'networkidle0' });
@@ -48,8 +48,12 @@ const pupRequest = async (
             );
         });
         browse.close();
+        console.log(lists);
         if (lists.length) {
-            return lists.filter((item) => title.match(item.title))[0];
+            return (
+                lists.filter((item) => title.match(item.title))[0] ||
+                lists.filter((item) => item.title.match(title))[0]
+            );
         }
         return;
     } catch (err) {
@@ -72,7 +76,7 @@ const kyoboPupRequest = async (
         executablePath: await chromium.executablePath,
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        headless: true,
+        headless: false,
     });
     const page = await browse.newPage();
     await page.goto(url, { waitUntil: 'networkidle0' });
@@ -151,7 +155,7 @@ const naverPupRequest = async (
             executablePath: await chromium.executablePath,
             args: chromium.args,
             defaultViewport: chromium.defaultViewport,
-            headless: true,
+            headless: false,
         });
         const page = await browse.newPage();
         await page.goto(url, { waitUntil: 'networkidle0' });
