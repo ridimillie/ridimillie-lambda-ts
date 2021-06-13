@@ -27,8 +27,17 @@ provider:
                   Resource: 'arn:aws:dynamodb:ap-northeast-2:*:*'
 
 functions:
-    app:
-        handler: src/serverless.handler
+    crawling:
+        handler: src/handler.crawling
         events:
-            - http: ANY /
-            - http: 'ANY {proxy+}'
+            - http:
+                  path: crawling
+                  method: get
+                  cors: true
+    naverAPI:
+        handler: src/handler.naverAPI
+        events:
+            - http:
+                  path: naver-api
+                  method: get
+                  cors: true
