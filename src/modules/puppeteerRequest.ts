@@ -16,7 +16,7 @@ const pupRequest = async (
     title: string,
     subscribedPrice: number,
     host?: string
-): Promise<BookPrice> => {
+): Promise<BookPrice[]> => {
     try {
         const [TITLE, REDIRECT_URL, LOAD_SELECTOR] = [0, 1, 2];
         const browse = await chromium.puppeteer.launch({
@@ -48,13 +48,7 @@ const pupRequest = async (
             );
         });
         browse.close();
-        console.log(lists);
-        if (lists.length) {
-            return (
-                lists.filter((item) => title.match(item.title))[0] ||
-                lists.filter((item) => item.title.match(title))[0]
-            );
-        }
+        if (lists.length) return lists;
         return;
     } catch (err) {
         console.log(err);
@@ -118,9 +112,7 @@ const kyoboPupRequest = async (
             });
     });
     browse.close();
-    if (lists.length) {
-        return lists.filter((item) => title.match(item.title));
-    }
+    if (lists.length) return lists;
     return;
 };
 

@@ -10,7 +10,7 @@ import {
     naverPupRequest,
 } from './puppeteerRequest';
 
-const ridiSelect = async (title: string): Promise<BookPrice> => {
+const ridiSelect = async (title: string): Promise<BookPrice[]> => {
     const platform = 'RIDI';
     const url =
         'https://select.ridibooks.com/search?q=' +
@@ -18,7 +18,7 @@ const ridiSelect = async (title: string): Promise<BookPrice> => {
         '&type=Books';
     const selector = '#app > main > ul> li';
     const childSelectorArr = ['div > div > a > h3 ', 'div > div > a', 'a h3'];
-    const book: BookPrice = await pupRequest(
+    const book: BookPrice[] = await pupRequest(
         url,
         selector,
         childSelectorArr,
@@ -30,7 +30,7 @@ const ridiSelect = async (title: string): Promise<BookPrice> => {
     return book;
 };
 
-const millie = async (title: string): Promise<BookPrice> => {
+const millie = async (title: string): Promise<BookPrice[]> => {
     const platform = 'MILLIE';
     const url =
         'https://www.millie.co.kr/v3/search/result/' +

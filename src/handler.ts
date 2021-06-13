@@ -54,8 +54,10 @@ const crawling: Handler = async (
         const books = (await crawler.crawling(title, bid)).filter(
             (item) => !_.isNil(item)
         );
-        const [subscribe, purchase] = books;
-
+        let [subscribe, purchase] = books;
+        subscribe = subscribe.filter(
+            (item) => item.title.match(title) || title.match(item.title)
+        );
         await documentClient
             .put({
                 TableName,
