@@ -4,18 +4,11 @@ import * as cheerio from 'cheerio';
 import { Platforms, ServiceType, SubscribePrice, Platform_T } from '../types';
 import BookPrice from '../class/BookPrice';
 import NaverBook from '../class/NaverBook';
-import {
-    pupRequest,
-    kyoboPupRequest,
-    naverPupRequest,
-} from './puppeteerRequest';
+import { pupRequest, kyoboPupRequest, naverPupRequest } from './puppeteerRequest';
 
 const ridiSelect = async (title: string): Promise<BookPrice[]> => {
     const platform = 'RIDI';
-    const url =
-        'https://select.ridibooks.com/search?q=' +
-        encodeURI(title) +
-        '&type=Books';
+    const url = 'https://select.ridibooks.com/search?q=' + encodeURI(title) + '&type=Books';
     const selector = '#app > main > ul> li';
     const childSelectorArr = ['div > div > a > h3 ', 'div > div > a', 'a h3'];
     const book: BookPrice[] = await pupRequest(
@@ -32,34 +25,16 @@ const ridiSelect = async (title: string): Promise<BookPrice[]> => {
 
 const millie = async (title: string): Promise<BookPrice[]> => {
     const platform = 'MILLIE';
-    const url =
-        'https://www.millie.co.kr/v3/search/result/' +
-        encodeURI(title) +
-        '?type=all&order=keyword&category=1';
-    const selector =
-        '#wrap > section > div > section.search-list > div > ul > li';
-    const childSelectorArr = [
-        'a > div.body > span.title',
-        'a',
-        'a div.body span.title',
-    ];
-    const book = await pupRequest(
-        url,
-        selector,
-        childSelectorArr,
-        Platforms[platform],
-        title,
-        SubscribePrice.MILLIE
-    );
+    const url = 'https://www.millie.co.kr/v3/search/result/' + encodeURI(title) + '?type=all&order=keyword&category=1';
+    const selector = '#wrap > section > div > section.search-list > div > ul > li';
+    const childSelectorArr = ['a > div.body > span.title', 'a', 'a div.body span.title'];
+    const book = await pupRequest(url, selector, childSelectorArr, Platforms[platform], title, SubscribePrice.MILLIE);
     return book;
 };
 
 const yes24 = (title: string): Promise<BookPrice> =>
     new Promise((resolved, rejected) => {
-        const url =
-            'https://bookclub.yes24.com/BookClub/Search?keyword=' +
-            encodeURI(title) +
-            '&OrderBy=01&pageNo=1';
+        const url = 'https://bookclub.yes24.com/BookClub/Search?keyword=' + encodeURI(title) + '&OrderBy=01&pageNo=1';
 
         const options = {
             url,
@@ -74,16 +49,11 @@ const yes24 = (title: string): Promise<BookPrice> =>
 
             const $ = cheerio.load(body);
             const selector = '#ulGoodsList > li';
-            const childSelectorArr = [
-                'div > div > div > a',
-                'div > p > span > a',
-            ];
+            const childSelectorArr = ['div > div > div > a', 'div > p > span > a'];
 
             $(selector).each((_, list) => {
                 const title = $(list).find(childSelectorArr[0]).text();
-                const redirectURL = $(list)
-                    .find(childSelectorArr[1])
-                    .attr('href');
+                const redirectURL = $(list).find(childSelectorArr[1]).attr('href');
                 resolved(
                     new BookPrice(
                         title,

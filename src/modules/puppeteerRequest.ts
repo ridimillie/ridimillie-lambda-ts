@@ -33,19 +33,9 @@ const pupRequest = async (
         const lists = [];
         $(selector).each((_, list) => {
             const title = $(list).find(childSelectorArr[TITLE]).text().trim();
-            let redirectURL = $(list)
-                .find(childSelectorArr[REDIRECT_URL])
-                .attr('href');
+            let redirectURL = $(list).find(childSelectorArr[REDIRECT_URL]).attr('href');
             if (host) redirectURL = encodeURI(host + redirectURL);
-            lists.push(
-                new BookPrice(
-                    title,
-                    platform,
-                    redirectURL,
-                    ServiceType.SUBSCRIBE,
-                    subscribedPrice
-                )
-            );
+            lists.push(new BookPrice(title, platform, redirectURL, ServiceType.SUBSCRIBE, subscribedPrice));
         });
         browse.close();
         if (lists.length) return lists;
@@ -80,9 +70,7 @@ const kyoboPupRequest = async (
     const lists = [];
     $(selector).each((_, list) => {
         const title = $(list).find(childSelectorArr[TITLE]).text().trim();
-        let redirectURL = $(list)
-            .find(childSelectorArr[REDIRECT_URL])
-            .attr('href');
+        let redirectURL = $(list).find(childSelectorArr[REDIRECT_URL]).attr('href');
         if (host) redirectURL = encodeURI(host + redirectURL);
 
         $(list)
@@ -90,13 +78,7 @@ const kyoboPupRequest = async (
             .each((_, item) => {
                 if ($(item).attr('alt') === Platforms.KYOBO_BASIC) {
                     lists.push(
-                        new BookPrice(
-                            title,
-                            Platforms.KYOBO_BASIC,
-                            redirectURL,
-                            ServiceType.SUBSCRIBE,
-                            subscribedPrice
-                        )
+                        new BookPrice(title, Platforms.KYOBO_BASIC, redirectURL, ServiceType.SUBSCRIBE, subscribedPrice)
                     );
                 } else if ($(item).attr('alt') === Platforms.KYOBO_UNLIMITED) {
                     lists.push(
@@ -159,16 +141,12 @@ const naverPupRequest = async (
             const isEbook = $(list).find(childSelectorArr[IS_EBOOK]).text();
             const platform = $(list).find(childSelectorArr[PLATFORM]).text();
             const price = $(list).find(childSelectorArr[PRICE]).text();
-            let redirectURL = $(list)
-                .find(childSelectorArr[REDIRECT_URL])
-                .attr('href');
+            let redirectURL = $(list).find(childSelectorArr[REDIRECT_URL]).attr('href');
             if (isEbook.match('ebook')) {
                 const platformName = platform.split('Naver')[0] as Platform_T;
                 books.push(
                     new NaverBook(
-                        reversedPlatformIdMap.get(
-                            platformIdMap.get(platformName)
-                        ),
+                        reversedPlatformIdMap.get(platformIdMap.get(platformName)),
                         redirectURL,
                         Number(price.split('원')[0].replace(',', ''))
                     )
