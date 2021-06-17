@@ -58,7 +58,8 @@ const crawling: Handler = async (
         subscribe = subscribe.filter(
             (item) => item.title.match(title) || title.match(item.title)
         );
-        await documentClient
+
+        const putSubscribe = documentClient
             .put({
                 TableName,
                 Item: {
@@ -69,7 +70,7 @@ const crawling: Handler = async (
             })
             .promise();
 
-        await documentClient
+        const putPurchase = documentClient
             .put({
                 TableName,
                 Item: {
@@ -79,6 +80,8 @@ const crawling: Handler = async (
                 },
             })
             .promise();
+
+        await Promise.all([putSubscribe, putPurchase]).then(console.log);
 
         return responseFormat(200, {
             subscribe,
