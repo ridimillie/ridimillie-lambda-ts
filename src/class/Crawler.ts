@@ -1,10 +1,5 @@
 import * as _ from 'lodash';
-import {
-    ridiSelect,
-    yes24,
-    kyoboBook,
-    searchNaverBook,
-} from '../modules/scrapper';
+import { ridiSelect, yes24, kyoboBook, searchNaverBook } from '../modules/scrapper';
 import BookPrice from './BookPrice';
 import NaverBook from './NaverBook';
 /**
@@ -23,12 +18,7 @@ class Crawler {
     public async crawling(title: string, bid: string) {
         const subscribedBooks = [];
         const purchaseBooks = [];
-        const scrappers = [
-            ridiSelect(title),
-            yes24(title),
-            kyoboBook(title),
-            searchNaverBook(bid),
-        ];
+        const scrappers = [ridiSelect(title), yes24(title), kyoboBook(title), searchNaverBook(bid)];
         await Promise.allSettled(scrappers).then((results) => {
             results.forEach((result) => {
                 if (result.status == 'fulfilled') {

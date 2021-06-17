@@ -3,16 +3,9 @@ import * as dotenv from 'dotenv';
 import { NaverBook_T } from '../types';
 dotenv.config();
 
-const callBookApi = (
-    query: string,
-    start: number
-): Promise<Array<NaverBook_T>> => {
+const callBookApi = (query: string, start: number): Promise<Array<NaverBook_T>> => {
     return new Promise((resolved, rejected) => {
-        const api_url =
-            'https://openapi.naver.com/v1/search/book.json?query=' +
-            encodeURI(query) +
-            '&start=' +
-            start;
+        const api_url = 'https://openapi.naver.com/v1/search/book.json?query=' + encodeURI(query) + '&start=' + start;
         const options = {
             url: api_url,
             headers: {

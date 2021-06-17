@@ -8,14 +8,8 @@ import naverBookAPI from './modules/naverBookApi';
 import { CrawlerResponse, NaverBook_T } from './types/index';
 import { responseFormat } from './modules/responseFormat';
 
-const crawling: Handler = async (
-    event: any,
-    context: Context
-): Promise<CrawlerResponse> => {
-    const {
-        title,
-        bid,
-    }: { title?: string; bid?: string } = event.queryStringParameters;
+const crawling: Handler = async (event: any, context: Context): Promise<CrawlerResponse> => {
+    const { title, bid }: { title?: string; bid?: string } = event.queryStringParameters;
 
     if (title == 'undefined' || !bid || !title) {
         return responseFormat(400, { message: 'Null Value' });
@@ -51,13 +45,9 @@ const crawling: Handler = async (
     }
 
     try {
-        const books = (await crawler.crawling(title, bid)).filter(
-            (item) => !_.isNil(item)
-        );
+        const books = (await crawler.crawling(title, bid)).filter((item) => !_.isNil(item));
         let [subscribe, purchase] = books;
-        subscribe = subscribe.filter(
-            (item) => item.title.match(title) || title.match(item.title)
-        );
+        subscribe = subscribe.filter((item) => item.title.match(title) || title.match(item.title));
 
         const putSubscribe = documentClient
             .put({
@@ -82,7 +72,6 @@ const crawling: Handler = async (
             .promise();
 
         await Promise.all([putSubscribe, putPurchase]).then(console.log);
-
         return responseFormat(200, {
             subscribe,
             purchase,
@@ -110,27 +99,18 @@ const naver: Handler = async (event: any, context: Context) => {
 };
 
 const naverAPI = async (event: any, context: Context): Promise<any> => {
-    const {
-        start,
-        query,
-    }: { start?: number; query?: string } = event.queryStringParameters;
+    const { start, query }: { start?: number; query?: string } = event.queryStringParameters;
 
     try {
         if (!query || query === 'undefined') {
             return responseFormat(400, { message: 'query 값 이 없음' });
         }
-        const apiBooks = await naverBookAPI.callBookApi(
-            query,
-            start ? start : 1
-        );
+        const apiBooks = await naverBookAPI.callBookApi(query, start ? start : 1);
         const books = apiBooks.map((book) => {
             const bookTitle = JSON.stringify(book.title)
                 .replace(/(<b>)|(<\/b>)/gi, '')
                 .replace(/ *\([^)]*\) */g, '');
-            const bookDescription = JSON.stringify(book.description).replace(
-                /(<b>)|(<\/b>)/gi,
-                ''
-            );
+            const bookDescription = JSON.stringify(book.description).replace(/(<b>)|(<\/b>)/gi, '');
             return {
                 title: JSON.parse(bookTitle),
                 bid: book.link.split('bid=')[1],
