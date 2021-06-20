@@ -5,8 +5,13 @@ import { DynamoDB } from 'aws-sdk';
 import crawler from './class/Crawler';
 import naverCrawler from './class/CrawlerNaver';
 import naverBookAPI from './modules/naverBookApi';
-import { CrawlerResponse, NaverBook_T } from './types/index';
+import { CrawlerResponse, NaverBook_T, SubscribePrice } from './types/index';
 import { responseFormat } from './modules/responseFormat';
+import { searchNaverBook } from './modules/scrapper';
+
+/**
+ *TODO 네이버 크롤링 로직을 안정화시키고. 디비에서 get해올때 purchase, sub 따로 해서 각각 없으때 크롤링 할 수 있도록 바뀨기
+ */
 
 const crawling: Handler = async (event: any, context: Context): Promise<CrawlerResponse> => {
     const { title, bid }: { title?: string; bid?: string } = event.queryStringParameters;
@@ -15,63 +20,75 @@ const crawling: Handler = async (event: any, context: Context): Promise<CrawlerR
         return responseFormat(400, { message: 'Null Value' });
     }
 
+    let subscribe;
+    let purchase;
+
     const documentClient = new DynamoDB.DocumentClient({});
     const TableName = process.env.TABLE_NAME;
-    let params = {
-        TableName,
-        KeyConditionExpression: '#bid = :bid',
-        ExpressionAttributeNames: {
-            '#bid': 'bid',
-        },
-        ExpressionAttributeValues: {
-            ':bid': bid,
-        },
+    let params = (bid, sortKey) => {
+        return {
+            TableName,
+            KeyConditionExpression: '#bid = :bid and #sortKey = :sortKey',
+            ExpressionAttributeNames: {
+                '#bid': 'bid',
+                '#sortKey': 'sortKey',
+            },
+            ExpressionAttributeValues: {
+                ':bid': bid,
+                ':sortKey': sortKey,
+            },
+        };
     };
-
     try {
-        const books = (await documentClient.query(params).promise()).Items;
-        if (books.length > 0) {
-            const returnBooks = books.map((result) => {
-                return {
-                    [result.sortKey]: result.booksInfo,
-                };
-            });
-            const [purchase, subscribe] = [...returnBooks];
-            return responseFormat(200, Object.assign(subscribe, purchase));
+        // const books = await documentClient.query(params).promise();
+        // if (books.Items.length > 0) {
+        //     const returnBooks = books.Items.map((result) => {
+        //         return {
+        //             [result.sortKey]: result.booksInfo,
+        //         };
+        //     });
+        //     const [purchase, subscribe] = [...returnBooks];
+        //     console.log(returnBooks);
+        //     return responseFormat(200, Object.assign(subscribe, purchase));
+        // }
+        purchase = await documentClient.query(params(bid, 'purchase')).promise();
+        subscribe = await documentClient.query(params(bid, 'subscribe')).promise();
+
+        if (subscribe.Items.length === 0) {
+            subscribe = (await crawler.crawling(title, bid)).filter((item) => !_.isNil(item));
+            subscribe = subscribe.filter((item) => item.title.match(title) || title.match(item.title));
+            await documentClient
+                .put({
+                    TableName,
+                    Item: {
+                        bid,
+                        sortKey: 'subscribe',
+                        booksInfo: subscribe,
+                    },
+                })
+                .promise();
+        } else {
+            subscribe = subscribe.Items[0].booksInfo;
         }
-    } catch (err) {
-        console.log('error', err);
-        return responseFormat(500, { message: 'Server error' });
-    }
 
-    try {
-        const books = (await crawler.crawling(title, bid)).filter((item) => !_.isNil(item));
-        let [subscribe, purchase] = books;
-        subscribe = subscribe.filter((item) => item.title.match(title) || title.match(item.title));
+        if (purchase.Items.length === 0) {
+            purchase = await naverCrawler.crawling(bid);
+            await documentClient
+                .put({
+                    TableName,
+                    Item: {
+                        bid,
+                        sortKey: 'purchase',
+                        booksInfo: purchase,
+                    },
+                })
+                .promise();
+        } else {
+            purchase = purchase.Items[0].booksInfo;
+        }
+        console.log('sub', subscribe);
+        console.log('pur', purchase);
 
-        const putSubscribe = documentClient
-            .put({
-                TableName,
-                Item: {
-                    bid,
-                    sortKey: 'subscribe',
-                    booksInfo: subscribe,
-                },
-            })
-            .promise();
-
-        const putPurchase = documentClient
-            .put({
-                TableName,
-                Item: {
-                    bid,
-                    sortKey: 'purchase',
-                    booksInfo: purchase,
-                },
-            })
-            .promise();
-
-        await Promise.all([putSubscribe, putPurchase]).then(console.log);
         return responseFormat(200, {
             subscribe,
             purchase,
