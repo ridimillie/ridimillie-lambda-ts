@@ -54,9 +54,13 @@ const crawling: Handler = async (event: any, context: Context): Promise<CrawlerR
         purchase = await documentClient.query(params(bid, 'purchase')).promise();
         subscribe = await documentClient.query(params(bid, 'subscribe')).promise();
 
-        if (subscribe.Items.length === 0) {
-            subscribe = (await crawler.crawling(title, bid)).filter((item) => !_.isNil(item));
-            subscribe = subscribe.filter((item) => item.title.match(title) || title.match(item.title));
+        if (
+            !subscribe.Items.length ||
+            (subscribe.Items[0].hasOwnProperty('booksInfo') && !subscribe.Items[0].booksInfo.length)
+        ) {
+            subscribe = (await crawler.crawling(title, bid)).filter(
+                (item) => !_.isNil(item) && (item.title.match(title) || title.match(item.title))
+            );
             await documentClient
                 .put({
                     TableName,
@@ -71,7 +75,10 @@ const crawling: Handler = async (event: any, context: Context): Promise<CrawlerR
             subscribe = subscribe.Items[0].booksInfo;
         }
 
-        if (purchase.Items.length === 0) {
+        if (
+            !purchase.Items.length ||
+            (purchase.Items[0].hasOwnProperty('booksInfo') && !purchase.Items[0].booksInfo.length)
+        ) {
             purchase = await naverCrawler.crawling(bid);
             await documentClient
                 .put({

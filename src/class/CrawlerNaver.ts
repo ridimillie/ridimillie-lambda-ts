@@ -13,8 +13,8 @@ class Crawler {
         return this.instance;
     }
 
-    public async crawling(title: string) {
-        const result = await searchNaverBook(title);
+    public async crawling(bid: string) {
+        const result = await searchNaverBook(bid);
         return result;
     }
 }
