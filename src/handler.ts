@@ -93,12 +93,12 @@ const crawling: Handler = async (event: any, context: Context): Promise<CrawlerR
         } else {
             purchase = purchase.Items[0].booksInfo;
         }
-        console.log('sub', subscribe);
-        console.log('pur', purchase);
+        console.log('Sub', JSON.parse(JSON.stringify(subscribe)));
+        console.log('Pur', JSON.parse(JSON.stringify(purchase)));
 
         return responseFormat(200, {
-            subscribe,
-            purchase,
+            subscribe: JSON.parse(JSON.stringify(subscribe)),
+            purchase: JSON.parse(JSON.stringify(purchase)),
         });
     } catch (err) {
         console.log('error', err);
