@@ -26,6 +26,10 @@ provider:
                       - dynamodb:DescribeTable
                   Resource: 'arn:aws:dynamodb:ap-northeast-2:*:*'
 
+custom:
+    serverless-offline:
+        httpPort: 4000
+
 functions:
     crawling:
         handler: src/handler.crawling

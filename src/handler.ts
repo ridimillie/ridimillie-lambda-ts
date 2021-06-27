@@ -39,25 +39,19 @@ const crawling: Handler = async (event: any, context: Context): Promise<CrawlerR
             },
         };
     };
+    /**
+     * Todo
+     * 1. 디비쿼리
+     * 2. 둘다 없으면 크롤링
+     * 3. 그게 아니면 return 후 크롤러에게 넘김
+     */
     try {
-        // const books = await documentClient.query(params).promise();
-        // if (books.Items.length > 0) {
-        //     const returnBooks = books.Items.map((result) => {
-        //         return {
-        //             [result.sortKey]: result.booksInfo,
-        //         };
-        //     });
-        //     const [purchase, subscribe] = [...returnBooks];
-        //     console.log(returnBooks);
-        //     return responseFormat(200, Object.assign(subscribe, purchase));
-        // }
         purchase = await documentClient.query(params(bid, 'purchase')).promise();
         subscribe = await documentClient.query(params(bid, 'subscribe')).promise();
-
-        if (
-            !subscribe.Items.length ||
-            (subscribe.Items[0].hasOwnProperty('booksInfo') && !subscribe.Items[0].booksInfo.length)
-        ) {
+        if (purchase.Items.length || subscribe.Items.length) {
+            subscribe = subscribe.Items[0].booksInfo;
+            purchase = purchase.Items[0].booksInfo;
+        } else {
             subscribe = (await crawler.crawling(title, bid)).filter(
                 (item) => !_.isNil(item) && (item.title.match(title) || title.match(item.title))
             );
@@ -71,14 +65,7 @@ const crawling: Handler = async (event: any, context: Context): Promise<CrawlerR
                     },
                 })
                 .promise();
-        } else {
-            subscribe = subscribe.Items[0].booksInfo;
-        }
 
-        if (
-            !purchase.Items.length ||
-            (purchase.Items[0].hasOwnProperty('booksInfo') && !purchase.Items[0].booksInfo.length)
-        ) {
             purchase = await naverCrawler.crawling(bid);
             await documentClient
                 .put({
@@ -90,12 +77,7 @@ const crawling: Handler = async (event: any, context: Context): Promise<CrawlerR
                     },
                 })
                 .promise();
-        } else {
-            purchase = purchase.Items[0].booksInfo;
         }
-        console.log('Sub', JSON.parse(JSON.stringify(subscribe)));
-        console.log('Pur', JSON.parse(JSON.stringify(purchase)));
-
         return responseFormat(200, {
             subscribe: JSON.parse(JSON.stringify(subscribe)),
             purchase: JSON.parse(JSON.stringify(purchase)),
