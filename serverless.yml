@@ -32,14 +32,14 @@ custom:
 
 functions:
     crawling:
-        handler: src/handler.crawling
+        handler: src/handler/crawling.handler
         events:
             - http:
                   path: crawling
                   method: get
                   cors: true
     naverAPI:
-        handler: src/handler.naverAPI
+        handler: src/handler/naverAPI.handler
         events:
             - http:
                   path: naver-api
