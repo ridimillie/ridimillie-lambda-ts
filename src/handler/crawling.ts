@@ -2,10 +2,11 @@ import { Handler, Context } from 'aws-lambda';
 import * as _ from 'lodash';
 import { DynamoDB } from 'aws-sdk';
 
-import crawler from '../class/Crawler';
+import crawler from '../utils/crawler';
 import naverCrawler from '../class/CrawlerNaver';
 import { CrawlerResponse } from '../types/index';
 import { responseFormat } from '../modules/responseFormat';
+import retryCrawling from '../utils/retryCrawling';
 
 const handler: Handler = async (event: any, context: Context): Promise<CrawlerResponse> => {
     const { title, bid }: { title?: string; bid?: string } = event.queryStringParameters;
@@ -42,35 +43,15 @@ const handler: Handler = async (event: any, context: Context): Promise<CrawlerRe
     try {
         purchase = await documentClient.query(params(bid, 'purchase')).promise();
         subscribe = await documentClient.query(params(bid, 'subscribe')).promise();
+        //console.log(purchase.Items[0].crawlingCount); // cannot read property crawlingCount
         if (purchase.Items.length || subscribe.Items.length) {
-            subscribe = subscribe.Items[0].booksInfo;
-            purchase = purchase.Items[0].booksInfo;
+            subscribe = subscribe.Items[0].booksInfo ? subscribe.Items[0].booksInfo : retryCrawling(bid, title);
+            purchase = purchase.Items[0].booksInfo ? purchase.Items[0].booksInfo : retryCrawling(bid, title);
+            console.log(purchase);
+            console.log(subscribe);
         } else {
-            subscribe = (await crawler.crawling(title, bid)).filter(
-                (item) => !_.isNil(item) && (item.title.match(title) || title.match(item.title))
-            );
-            await documentClient
-                .put({
-                    TableName,
-                    Item: {
-                        bid,
-                        sortKey: 'subscribe',
-                        booksInfo: subscribe,
-                    },
-                })
-                .promise();
-
-            purchase = await naverCrawler.crawling(bid);
-            await documentClient
-                .put({
-                    TableName,
-                    Item: {
-                        bid,
-                        sortKey: 'purchase',
-                        booksInfo: purchase,
-                    },
-                })
-                .promise();
+            subscribe = await crawler.subscribe(title, bid);
+            purchase = await crawler.purchase(bid);
         }
         return responseFormat(200, {
             subscribe: JSON.parse(JSON.stringify(subscribe)),
